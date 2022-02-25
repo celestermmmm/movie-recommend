@@ -16,6 +16,7 @@ from similarity import select_neighbor
 def rating_predict(U, UE):
     # fill up user-movie matrix by predicted rating
     # U: user-movie matrix
+    # UE: user-hidden_factor matrix
     for u in U:
         neighborList = select_neighbor(u, UE)
         Ru = np.mean(i for i in u if i != -1)  # 求该用户的平均值Ru
@@ -38,11 +39,23 @@ def rating_predict(U, UE):
     return U
 
 
-def recommend_n_movie(u, U, n=10):
+def recommend_n_movie(U_origin, U, n=10):
     # recommend top n movies for active user
-    # u: active user
+    # U_origin: not predicted user-movie matrix
+    # U: predicted user-movie matrix
     # n: top n movie (default=10)
-    for u in U:
-        u.sort(reversed=True)
-        u = u[0:n]
-    return U
+
+    for u_id in range(len(U)):
+        marked_movies = [i for i in range(len(U)) if U_origin[i] != 0]
+        not_marked_ratings = [(i, U[i])
+                              for i in range(len(U)) if i not in marked_movies]
+
+        # reversed sort according for the second element
+        not_marked_ratings.sort(key=lambda x: -x[1])
+
+        if len(not_marked_ratings) < n:
+            print([e[0] for e in not_marked_ratings])
+        else:
+            print([e[0] for e in not_marked_ratings][:n])
+
+    return
