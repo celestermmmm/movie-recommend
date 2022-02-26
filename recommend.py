@@ -13,49 +13,52 @@ import numpy as np
 from similarity import select_neighbor
 
 
-def rating_predict(U, UE):
+def rating_predict(U, p, movie_count):
     # fill up user-movie matrix by predicted rating
-    # U: user-movie matrix
-    # UE: user-hidden_factor matrix
-    for u in U:
-        neighborList = select_neighbor(u, UE)
-        Ru = np.mean(i for i in u if i != -1)  # 求该用户的平均值Ru
-        for item_i in range(u):
-            if u[item_i] == -1:
-                sim_rvi_rv_list = [(U[neighbor[0]][item_i]-np.mean(U[neighbor[0]]))*neighbor[1]
-                                   for neighbor in neighborList if U[neighbor[0]][item_i] != -1]
+    # U: (user, movie, rating) matrix
+    # p: user-hidden_factor matrix
+
+    U_predict = []
+    for uid in range(len(p)):
+
+        u_marked = [i[1] for i in U if i[0] == uid+1]
+        neighborList = select_neighbor((uid, p[uid]), p)
+
+        Ru = np.mean(u_marked)  # 求该用户的平均值Ru
+
+        for item_i in range(movie_count):
+            if item_i+1 not in u_marked:
+                sim_rvi_rv_list = [([i[2] for i in U if i[0] == neighbor[0] and i[1] == item_i+1][0] - np.mean([i[2] for i in U if i[0] == neighbor[0]]))*neighbor[1]
+                                   for neighbor in neighborList if [i[2] for i in U if i[0] == neighbor[0] and i[1] == item_i+1][0] != 0]
                 if len(sim_rvi_rv_list) == 0:
-                    # 如果所有的邻居都没有对这部电影评分，则跳过对该电影的分数预测
-                    continue
+                    # 如果所有的邻居都没有对这部电影评分，则对该电影的分数预测为0
+                    U_predict.append([uid+1, item_i+1, 0])
+                else:
+                    # 计算Σsim(u,v)(rvi-rv), v in K
+                    sum_sim_rvi_rv = sum(sim_rvi_rv_list)
+                    # 计算Σ|sim(u,v)|, v in K
+                    sum_abs_sim_u_v = sum(abs(neighbor[1])
+                                          for neighbor in neighborList)
 
-                # 计算Σsim(u,v)(rvi-rv), v in K
-                sum_sim_rvi_rv = sum(sim_rvi_rv_list)
-                # 计算Σ|sim(u,v)|, v in K
-                sum_abs_sim_u_v = sum(abs(neighbor[1])
-                                      for neighbor in neighborList)
-
-                P_ui = Ru+sum_sim_rvi_rv/sum_abs_sim_u_v  # 计算P(u,i)
-                u[item_i] = P_ui
-    return U
+                    # 计算P(u,i) (四舍五入取整)
+                    P_ui = round(Ru+sum_sim_rvi_rv/sum_abs_sim_u_v)
+                    U_predict.append([uid+1, item_i+1, P_ui])
+    return U_predict
 
 
-def recommend_n_movie(U_origin, U, n=10):
+def recommend_n_movie(U, user_count, n=10):
     # recommend top n movies for active user
-    # U_origin: not predicted user-movie matrix
     # U: predicted user-movie matrix
+    # user_count: account of users
     # n: top n movie (default=10)
 
-    for u_id in range(len(U)):
-        marked_movies = [i for i in range(len(U)) if U_origin[i] != 0]
-        not_marked_ratings = [(i, U[i])
-                              for i in range(len(U)) if i not in marked_movies]
+    for i in range(user_count):
+        rating_list = [(u[1], u[2]) for u in U if u[0] == i+1]
 
-        # reversed sort according for the second element
-        not_marked_ratings.sort(key=lambda x: -x[1])
-
-        if len(not_marked_ratings) < n:
-            print([e[0] for e in not_marked_ratings])
+        rating_list.sort(key=lambda x: -x[1])
+        if len(rating_list) < n:
+            print([e[1] for e in rating_list])
         else:
-            print([e[0] for e in not_marked_ratings][:n])
+            print([e[1] for e in rating_list][:n])
 
     return
