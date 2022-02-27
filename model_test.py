@@ -21,7 +21,7 @@ def get_precision(test_data):
     Ratings_origin = copy.deepcopy(Ratings)  # 拷原始用户-电影评分矩阵用以保留
 
     svd_computer = SVD(ratings=Ratings)
-    svd_computer.train()  # 对U矩阵进行svd, 默认取前100%奇异值
+    svd_computer.train()  # 对U矩阵进行svd
     p = svd_computer.user_mat
 
     # 计算电影总数
