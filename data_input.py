@@ -43,37 +43,39 @@ def load_rating_data(file_path='../movie_recommend/rtest_0.csv'):
         mid = int(movieid)
         rat = float(rating)
 
-        """
-        比对用户游标, 将一个用户的所有评分信息读取完毕之后, 移动用户游标
-        """
-        if uid == user_num:  # 未收集完当前用户信息且不是最后一条信息
-            user_record.extend([0 for i in range(mid-movie_num-1)])
-            user_record.append(rat+1)
-            movie_num = mid
-        elif uid > user_num:  # 上一用户信息收集完，user_record尾部补零
-            user_record.extend([0 for j in range(205106-movie_num)])
+        prefer_matrix.append([uid, mid, rat])
 
-            # rec.append(len(user_record))
-            # if len(user_record)!=205106:
-            #     print(i+1)
-            #     print(rec)
-            #     raise Exception("列表长度错误")
-            # 205106为电影的最大编号
+        # """
+        # 比对用户游标, 将一个用户的所有评分信息读取完毕之后, 移动用户游标
+        # """
+        # if uid == user_num:  # 未收集完当前用户信息且不是最后一条信息
+        #     user_record.extend([0 for i in range(mid-movie_num-1)])
+        #     user_record.append(rat+1)
+        #     movie_num = mid
+        # elif uid > user_num:  # 上一用户信息收集完，user_record尾部补零
+        #     user_record.extend([0 for j in range(205106-movie_num)])
 
-            prefer_matrix.append(user_record)
-            user_num += 1
+        #     # rec.append(len(user_record))
+        #     # if len(user_record)!=205106:
+        #     #     print(i+1)
+        #     #     print(rec)
+        #     #     raise Exception("列表长度错误")
+        #     # 205106为电影的最大编号
 
-            # 以上完成了一组输入
-            user_record = []
-            user_record.extend([0 for j in range(mid-1)])
-            user_record.append(rat+1)
-            movie_num = mid
-            gc.collect()
-        else:  # 该条信息是最后一个用户的最后一条信息
-            user_record.extend([0 for j in range(mid-movie_num-1)])
-            user_record.append(rat+1)
-            user_record.extend([0 for j in range(205106-mid)])
-            prefer_matrix.append(user_record)
+        #     prefer_matrix.append(user_record)
+        #     user_num += 1
+
+        #     # 以上完成了一组输入
+        #     user_record = []
+        #     user_record.extend([0 for j in range(mid-1)])
+        #     user_record.append(rat+1)
+        #     movie_num = mid
+        #     gc.collect()
+        # else:  # 该条信息是最后一个用户的最后一条信息
+        #     user_record.extend([0 for j in range(mid-movie_num-1)])
+        #     user_record.append(rat+1)
+        #     user_record.extend([0 for j in range(205106-mid)])
+        #     prefer_matrix.append(user_record)
 
     data = np.array(prefer_matrix)
     return data

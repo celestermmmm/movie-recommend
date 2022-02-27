@@ -9,22 +9,36 @@ author: Hanjiaxing
 '''
 
 from data_input import load_rating_data
-from svd import svd_matrix
-from recommend import rating_predict, recommend_n_movie
+from svd import SVD
+from recommend import rating_predict
 import copy
 
 
-def main():
+def get_precision(test_data):
 
-    U = load_rating_data()  # 加载用户-电影评分矩阵
-    U_origin = copy.deepcopy(U)  # 拷原始用户-电影评分矩阵用以保留
+    Ratings = load_rating_data()  # 加载(用户,电影,评分)矩阵
 
-    UE = svd_matrix(U)  # 对U矩阵进行svd, 默认取前100%奇异值
+    Ratings_origin = copy.deepcopy(Ratings)  # 拷原始用户-电影评分矩阵用以保留
 
-    U = rating_predict(U, UE)  # 预测评分并填充U矩阵
+    svd_computer = SVD(ratings=Ratings)
+    svd_computer.train()  # 对U矩阵进行svd, 默认取前100%奇异值
+    p = svd_computer.user_mat
 
-    recommend_n_movie(U_origin, U)  # 打印TopN推荐电影结果
+    # 计算电影总数
+    item_list = [i[1] for i in Ratings]
+    movie_count = 0
+    for i in item_list:
+        movie_count += 1/item_list.count(i)
 
+    U_predict = rating_predict(
+        Ratings_origin, p, int(movie_count))  # 预测评分(四舍五入取整)
 
-if __name__ == "__main__":
-    main()
+    # 测试准确率
+    correct = 0
+    for i in U_predict:
+        if i in test_data:
+            correct += 1
+    precision = correct/len(test_data)
+
+    return precision
+    # recommend_n_movie(U_predict, len(p))  # 打印TopN推荐电影结果
