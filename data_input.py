@@ -4,14 +4,12 @@ description: input and init data.
 process: 1. open csv files
          2. read line
          3. handle data format initially
-         4. close csv files
-         5. clean data
-         6. normalize data
-         7. generate user-movie matrix       
+         4. store data into a list
+         5. return list       
 
 date: 2022-01-30 15:30
 
-author:
+author:zhaorong
 '''
 
 import numpy as np
@@ -19,18 +17,17 @@ from sklearn import model_selection
 import random
 import gc
 
-from sympy import EX
 
 
-def load_rating_data(file_path='../movie_recommend/rtest_0.csv'):
+def load_rating_data(file_path):
     """
     load movie lens 100k ratings from original rating file.
 
     """
     prefer_matrix = []
-    user_num = 1  # 用户游标
-    movie_num = 0  # 电影游标
-    user_record = []  # 一个用户的所有评分记录
+    # user_num = 1  # 用户游标
+    # movie_num = 0  # 电影游标
+    # user_record = []  # 一个用户的所有评分记录
     # rec = []
     f = open(file_path, 'r')
     lines = f.readlines()
