@@ -10,6 +10,7 @@ author: Hanjiaxing
 '''
 
 import numpy as np
+import pandas as pd
 from similarity import select_neighbor
 
 

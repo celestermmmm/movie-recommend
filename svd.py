@@ -1,9 +1,10 @@
 '''
-description: singular value decomposition.
+description: singular value decomposition;
+             culculate the matrix P and Q which product is  approximately equal to the initial user-movie matrix .
 
-process: 1. decomposite into UΣ
-         2. choose front x% feature value
-         3. generate reduced matrix
+process: 1. initialize P and Q
+         2. iterate P and Q according to the train model
+         3. generate P and Q
 
 date: 2022-01-30 15:38
 
@@ -30,14 +31,14 @@ import numpy as np
 class SVD:
 
     """
-    ratings: 训练数据, n*3维数组 (user, item, rating)
-    K: 隐向量维数
+    ratings: 训练数据, n*3数组 (user, item, rating)
+    K: 隐因子维数
     Lambda: 惩罚系数
     gamma: 学习率
     steps: 迭代次数
     """
 
-    def __init__(self, ratings, logger=None, normalize=False, K=40, Lambda=0.005, gamma=0.02, steps=40):
+    def __init__(self, ratings, logger=None,  K=40, Lambda=0.005, gamma=0.02, steps=40):
         # 字符串数组转换成数字数组
         # user, item字符串映射为数字
         self.ratings = []
@@ -45,11 +46,9 @@ class SVD:
         self.item2id = {}
         # user已推荐过的items
         self.userRecItems = {}
-        user_id = 0
-        item_id = 0
+        user_id = 0  # 用户游标
+        item_id = 0  # 电影游标
 
-        if normalize:
-            ratings[:, 2] = self.minMaxScaler(ratings[:, 2])
 
         for user, item, r in ratings:
             if user not in self.userRecItems:
@@ -125,16 +124,6 @@ class SVD:
 
             if self.isConverged(losses):
                 break
-
-    def minMaxScaler(self, ratings):
-        new_ratings = []
-        min_r = np.min(ratings)
-        max_r = np.max(ratings)
-
-        for r in ratings:
-            new_ratings.append((r-min_r)/(max_r-min_r))
-
-        return np.array(new_ratings)
 
     def normalize(self, ratings):
         mean = np.mean(ratings)
