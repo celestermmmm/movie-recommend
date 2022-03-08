@@ -12,68 +12,117 @@ from data_input import load_rating_data
 from svd import SVD
 from recommend import rating_predict
 import copy
-import pandas as pd
+import numpy as np
+from sklearn.metrics import mean_squared_error
 
-def get_precision(test_data):
 
-    Ratings = load_rating_data(file_path='../movie_recommend/ntrain.csv')  # 加载(用户,电影,评分)矩阵
+def get_movie_set(file_path='../movie_recommend/rtest_0.csv'):
+    prefer_matrix = []
+    f = open(file_path, 'r')
+    lines = f.readlines()
+    del lines[0]  # 去掉表头
 
-    Ratings_origin = copy.deepcopy(Ratings)  # 拷原始用户-电影评分矩阵用以保留
+    for i in range(len(lines)):  # 遍历原始表格
+        (userid, movieid, rating, ts) = lines[i].split(
+            ',')  # 按行读取其中4项元素: 用户id, 电影id, 电影评分, 时间戳
+        uid = int(userid)
+        mid = int(movieid)
+        rat = float(rating)
+
+        prefer_matrix.append([uid, mid, rat])
+
+    movie_set = set([i[1] for i in prefer_matrix])
+
+    return movie_set
+
+
+def get_rmse(test_data):
+    '''
+    获取RMSE
+    '''
+    Ratings = load_rating_data(
+        file_path='../movie_recommend/ntrain.csv')  # 加载(用户,电影,评分)矩阵
+
+    Ratings_origin = copy.deepcopy(Ratings)  # 拷贝原始用户-电影评分矩阵用以保留
+    test_data_list = copy.deepcopy(test_data).tolist()  # 拷贝测试集用来转化成list
 
     svd_computer = SVD(ratings=Ratings)
     svd_computer.train()  # 对U矩阵进行svd
     p = svd_computer.user_mat
+    q = svd_computer.item_mat
 
-    # 计算电影总数
-    item_list = [i[1] for i in Ratings]
-    movie_count = 0
-    for i in item_list:
-        movie_count += 1/item_list.count(i)
+    pq = np.dot(p, q)
 
+    noncolla_item = []
+    for u_id in range(len(pq)):
+        for m_id in range(len(pq[u_id])):
+            noncolla_item.append([u_id+1, m_id+1, pq[u_id][m_id]])
 
-    U_predict = rating_predict(
-        Ratings_origin, p, int(movie_count))  # 预测评分(四舍五入取整)
-
-
-
-###
-    user_list = [i[0] for i in U_predict]
-    user_count = 0
-    for i in user_list:
-        user_count += 1/user_list.count(i)
-    print(user_count)
-
-    test_user_list = [i[0] for i in test_data]
-    test_user_count = 0
-    for i in test_user_list:
-        test_user_count += 1/test_user_list.count(i)
-    print(test_user_count)
-
-    # 测试准确率
-    correct = 0
-    
-
-
+    noncolla_pre_item = []
     for i in test_data:
-        try:
-            
-            for item in U_predict:
-                if item[0]==i[0] :
-                    predict_item=item
-                else:
-                    print("没有item")
-                    #continue
-            #predict_item = [item for item in U_predict if item[0]==i[0] and item[1]==i[1]][0]
-        except IndexError as ie:
-            print("发生时刻：",i)
-            print("Indexerror",ie)  
-        if i[2] ==predict_item[2]:
-            correct += 1
-    precision = correct/len(test_data)
+        exist = 0
+        for item in noncolla_item:
+            if i[0] == item[0] and i[1] == item[1]:
+                noncolla_pre_item.append(item)
+                exist = 1
+                break
+        if exist == 0:
+            test_data_list.remove(i.tolist())
 
-    return precision
-    # recommend_n_movie(U_predict, len(p))  # 打印TopN推荐电影结果
-path='../movie_recommend/ntest.csv'
-test_data=load_rating_data(path)   
-result=get_precision(test_data)
-print(result)
+    noncolla_pre_item = sorted(noncolla_pre_item, key=(lambda x: [x[0], x[1]]))
+    uncolla_rmse = np.sqrt(mean_squared_error(
+        noncolla_pre_item, test_data_list))
+
+    movie_set = get_movie_set()  # 获取训练集和测试集中全部movie_id的集合
+    U_predict = rating_predict(
+        Ratings_origin, p, movie_set)  # 预测评分
+
+    # 求RMSE
+    predict_item = []
+    for i in test_data:
+        exist = 0
+        for item in U_predict:
+            if i[0] == item[0] and i[1] == item[1]:
+                predict_item.append(item)
+                exist = 1
+                break
+
+                # try:
+
+                #     for item in U_predict:
+                #         if item[0] == i[0]:
+                #             predict_item = item
+
+                #         else:
+                #             print(item)
+                #             return
+                # continue
+                #predict_item = [item for item in U_predict if item[0]==i[0] and item[1]==i[1]][0]
+                # except IndexError as ie:
+                #     print("发生时刻：", i)
+                #     print("Indexerror", ie)
+        if exist == 0:
+            print("i: ", i)
+
+    # 按照1.userid 2.itemid的顺序保持预测结果以及测试集同序
+    predict_item = sorted(predict_item, key=(
+        lambda x: [x[0], x[1]]))
+    # noncolla_pre_item = sorted(noncolla_pre_item, key=(
+    #     lambda x: [x[0], x[1]]))
+    test_data = sorted(test_data, key=(
+        lambda x: [x[0], x[1]]))
+
+    colla_rmse = np.sqrt(mean_squared_error(predict_item, test_data))
+    # uncolla_rmse = np.sqrt(mean_squared_error(noncolla_pre_item, test_data))
+
+    return colla_rmse, uncolla_rmse
+
+
+# recommend_n_movie(U_predict, len(p))  # 打印TopN推荐电影结果
+path = '../movie_recommend/ntest.csv'
+test_data = load_rating_data(path)
+
+# 获取有协同过滤方法的rmse和无协同过滤方法的rmse
+colla_rmse, uncolla_rmse = get_rmse(test_data)
+print("Collaboration rmse: ", colla_rmse)
+print("Uncolla rmse: ", uncolla_rmse)
