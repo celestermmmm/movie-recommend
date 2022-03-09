@@ -36,19 +36,6 @@ def get_precision(test_data):
 
 
 
-###
-    user_list = [i[0] for i in U_predict]
-    user_count = 0
-    for i in user_list:
-        user_count += 1/user_list.count(i)
-    print(user_count)
-
-    test_user_list = [i[0] for i in test_data]
-    test_user_count = 0
-    for i in test_user_list:
-        test_user_count += 1/test_user_list.count(i)
-    print(test_user_count)
-
     # 测试准确率
     correct = 0
     
