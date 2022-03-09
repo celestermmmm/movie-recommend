@@ -18,7 +18,6 @@ import random
 import gc
 
 
-
 def load_rating_data(file_path):
     """
     load movie lens 100k ratings from original rating file.
@@ -34,7 +33,11 @@ def load_rating_data(file_path):
     del lines[0]  # 去掉表头
 
     for i in range(len(lines)):  # 遍历原始表格
+<<<<<<< HEAD
         (index,userid, movieid, rating, ts) = lines[i].split(
+=======
+        (_, userid, movieid, rating, ts) = lines[i].split(
+>>>>>>> main
             ',')  # 按行读取其中4项元素: 用户id, 电影id, 电影评分, 时间戳
         uid = int(userid)
         mid = int(movieid)
