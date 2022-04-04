@@ -16,7 +16,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 
 
-def get_movie_set(file_path='../movie_recommend/rtest_0.csv'):
+def get_movie_set(file_path='../rtest_0.csv'):
     prefer_matrix = []
     f = open(file_path, 'r')
     lines = f.readlines()
@@ -41,7 +41,7 @@ def get_rmse(test_data):
     获取RMSE
     '''
     Ratings = load_rating_data(
-        file_path='../movie_recommend/ntrain.csv')  # 加载(用户,电影,评分)矩阵
+        file_path='../movie-recommend/ntrain.csv')  # 加载(用户,电影,评分)矩阵
 
     Ratings_origin = copy.deepcopy(Ratings)  # 拷贝原始用户-电影评分矩阵用以保留
     test_data_list = copy.deepcopy(test_data).tolist()  # 拷贝测试集用来转化成list
@@ -51,25 +51,7 @@ def get_rmse(test_data):
     p = svd_computer.user_mat
     q = svd_computer.item_mat
 
-<<<<<<< HEAD
-    # 计算电影总数
-    item_list = [i[1] for i in Ratings]
-    movie_count = 0
-    for i in item_list:
-        movie_count += 1/item_list.count(i)
-
-
-    U_predict = rating_predict(
-        Ratings_origin, p, int(movie_count))  # 预测评分(四舍五入取整)
-
-
-
-    # 测试准确率
-    correct = 0
-    
-=======
     pq = np.dot(p, q)
->>>>>>> main
 
     noncolla_item = []
     for u_id in range(len(pq)):
@@ -137,7 +119,7 @@ def get_rmse(test_data):
 
 
 # recommend_n_movie(U_predict, len(p))  # 打印TopN推荐电影结果
-path = '../movie_recommend/ntest.csv'
+path ='../movie-recommend/ntest.csv'
 test_data = load_rating_data(path)
 
 # 获取有协同过滤方法的rmse和无协同过滤方法的rmse

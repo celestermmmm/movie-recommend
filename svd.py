@@ -38,12 +38,9 @@ class SVD:
     steps: 迭代次数
     """
 
-    def __init__(self, ratings, K=40, Lambda=0.05, gamma=0.02, steps=80):
-        # ratings：csv数据文件；K：奇异值个数；Lambda：学习率；gamma： ；steps：迭代最高次数
+    def __init__(self, ratings, logger=None,  K=40, Lambda=0.005, gamma=0.02, steps=40):
         # 字符串数组转换成数字数组
         # user, item字符串映射为数字
-        #下面的一长串都是在实现这个功能
-
         self.ratings = []
         self.user2id = {}
         self.item2id = {}
@@ -58,35 +55,30 @@ class SVD:
                 self.userRecItems[user] = set()
 
             new_tup = []
-            # 记录用户到new_tup
             if user not in self.user2id:
                 self.user2id[user] = user_id
                 new_tup.append(user_id)
                 user_id += 1
             else:
                 new_tup.append(self.user2id[user])
-           
-           # 记录项目到new_tup、项目元组加数据
+
             if item not in self.item2id:
                 self.item2id[item] = item_id
-                self.userRecItems[user].add(item_id) #添加item游标数到第user个无序不重复元素集
+                self.userRecItems[user].add(item_id)
                 new_tup.append(item_id)
                 item_id += 1
             else:
                 self.userRecItems[user].add(self.item2id[item])
                 new_tup.append(self.item2id[item])
 
-           #记录一组数据，电影、用户都从0开始？？？？？？？？
             new_tup.append(r)
             self.ratings.append(new_tup)
 
         self.ratings = np.array(self.ratings)
 
-       #记录用户数、电影数
         user_num = len(self.user2id.keys())
         item_num = len(self.item2id.keys())
-       
-       #初始化一些需要的矩阵、变量
+
         self.user_mat = 0.1 * np.random.randn(user_num, K) / np.sqrt(K)
         self.item_mat = 0.1 * np.random.randn(K, item_num) / np.sqrt(K)
         self.bias_user = np.array([0.0] * user_num)
@@ -95,7 +87,7 @@ class SVD:
         self.Lambda = Lambda
         self.gamma = gamma
         self.steps = steps
-        
+        self.logger = logger
 
     def train(self):
         losses = []
@@ -127,11 +119,20 @@ class SVD:
                                    + (self.bias_user*self.bias_user).sum() + (self.bias_item*self.bias_item).sum())
             losses.append(loss)
             #print('step '+str(step)+' loss '+str(loss))
-          
+            if self.logger is not None:
+                self.logger.info('step '+str(step)+' loss: '+str(loss))
 
             if self.isConverged(losses):
                 break
 
+    def normalize(self, ratings):
+        mean = np.mean(ratings)
+        std = np.std(ratings)
+        new_ratings = []
+        for r in ratings:
+            new_ratings.append((r-mean)/std)
+
+        return np.array(new_ratings)
 
     def isConverged(self, losses, last_n_steps=30):
         last_losses = losses[-last_n_steps:]
@@ -140,3 +141,17 @@ class SVD:
             is_descending = True
         return is_descending
 
+    def early_stopping(self, losses):
+        # use early stopping
+        early_stopping_rounds = int(self.steps / 10)
+        is_descending = True
+        last_losses = losses[-early_stopping_rounds:]
+
+        if len(last_losses) >= early_stopping_rounds:
+            for i in range(len(last_losses)-1):
+                if losses[i+1] - losses[i] > 0.001:
+                    is_descending = False
+                    break
+        else:
+            is_descending = False
+        return is_descending

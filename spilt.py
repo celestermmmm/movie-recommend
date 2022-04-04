@@ -12,7 +12,7 @@ def count_num(s):
 
 k = 1
 while k:
-    file_path = '../movie_recommend/rtest_0.csv'
+    file_path = '../rtest_0.csv'
     data = pd.read_csv(file_path, sep=',', index_col=None)
     # 随机切割数据集
     ntrain, ntest = train_test_split(data, test_size=0.1)
@@ -30,5 +30,5 @@ while k:
         k = k-1
 
 # 存储数据集结果
-ntrain.to_csv('../movie_recommend/ntrain.csv')
-ntest.to_csv('../movie_recommend/ntest.csv')
+ntrain.to_csv('../movie-recommend/ntrain.csv')
+ntest.to_csv('../movie-recommend/ntest.csv')
