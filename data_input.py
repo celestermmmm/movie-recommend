@@ -14,8 +14,6 @@ author:zhaorong
 
 import numpy as np
 from sklearn import model_selection
-import random
-import gc
 
 
 def load_rating_data(file_path):
